@@ -8,7 +8,7 @@ __pycache__/
 
 .streamlit/
 
-.vscode
+.vscode/
 
 *.wav
 *.mp3
