@@ -20,39 +20,51 @@ def get_voice_embeddings(audio_bytes):
         st.error("Voice Regognition error", e)
         return None
     
-def identify_speaker(new_embedding, candidates_dict, threshold=0.65):
+def identify_speaker(new_embedding, candidates_dict, threshold=0.55):
+ 
     if new_embedding is None or not candidates_dict:
         return None, 0.0
-    
+
     best_sid = None
     best_score = -1.0
 
+    new_embedding = np.array(new_embedding)
+
     for sid, stored_embedding in candidates_dict.items():
+
         if stored_embedding:
-            similarity = np.dot(new_embedding, stored_embedding)
+
+            stored_embedding = np.array(stored_embedding)
+
+            similarity = np.dot(new_embedding, stored_embedding) / (
+                np.linalg.norm(new_embedding) * np.linalg.norm(stored_embedding)
+            )
+
+            st.write(f"Student: {sid}, Similarity: {similarity:.4f}")
+
             if similarity > best_score:
                 best_score = similarity
                 best_sid = sid
 
     if best_score >= threshold:
         return best_sid, best_score
-    
+
     return None, best_score
 
-def process_bulk_audio(audio_bytes, candidates_dict, threshold=0.65):
+def process_bulk_audio(audio_bytes, candidates_dict, threshold=0.55):
 
     try:
         encoder = load_voice_encoder()
 
         audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=16000)
-        segments = librosa.effects.split(audio, top_db=30)
+        segments = librosa.effects.split(audio, top_db=25)
 
         identified_results = {}
 
 
         for start, end in segments:
 
-            if (end-start) < sr * 0.5:
+            if (end-start) < sr * 1.0:
                 continue
             segment_audio = audio[start:end]
             wav = preprocess_wav(segment_audio)
